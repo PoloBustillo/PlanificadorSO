@@ -9,10 +9,18 @@ ID_A_NOMBRE = {criterio["id"]: criterio["nombre"] for criterio in CRITERIOS}
 VELOCIDAD = {"Lento": 1.0, "Normal": 0.45, "Rápido": 0.2}
 
 EJEMPLO = [
-    {"pid": 1, "llegada": 0, "ejecucion": 5, "prioridad": 4},
-    {"pid": 2, "llegada": 1, "ejecucion": 3, "prioridad": 3},
-    {"pid": 3, "llegada": 2, "ejecucion": 8, "prioridad": 1},
-    {"pid": 4, "llegada": 3, "ejecucion": 6, "prioridad": 2},
+    {"pid": 1, "llegada": 0, "ejecucion": 1, "prioridad": 4},
+    {"pid": 2, "llegada": 0, "ejecucion": 1, "prioridad": 4},
+    {"pid": 3, "llegada": 0, "ejecucion": 2, "prioridad": 3},
+    {"pid": 4, "llegada": 2, "ejecucion": 3, "prioridad": 2},
+    {"pid": 5, "llegada": 3, "ejecucion": 3, "prioridad": 0},
+    {"pid": 6, "llegada": 5, "ejecucion": 3, "prioridad": 1},
+    {"pid": 7, "llegada": 6, "ejecucion": 2, "prioridad": 4},
+    {"pid": 8, "llegada": 7, "ejecucion": 2, "prioridad": 3},
+    {"pid": 9, "llegada": 3, "ejecucion": 1, "prioridad": 2},
+    {"pid": 10, "llegada": 2, "ejecucion": 3, "prioridad": 1},
+    {"pid": 11, "llegada": 1, "ejecucion": 2, "prioridad": 4},
+    {"pid": 12, "llegada": 1, "ejecucion": 1, "prioridad": 3},
 ]
 
 PALETA = ["#1f6f5b", "#c4532a", "#245b86", "#8a5a12", "#6b3f69", "#3d6b4f", "#8f3d3d"]
@@ -22,7 +30,7 @@ ESTILO_ORDEN = """
 .sortable-component {
     border: 0;
     background: transparent;
-    padding: 0;
+    padding: 0.45rem 0.15rem 0.65rem;
 }
 .sortable-container-body {
     display: flex;
@@ -32,13 +40,14 @@ ESTILO_ORDEN = """
     gap: 0.35rem;
     background: transparent;
     min-height: 0;
-    padding: 0;
+    padding: 0.15rem 0;
 }
-.sortable-item {
+.sortable-item,
+.sortable-item:hover {
     display: inline-block;
     width: auto;
     height: auto;
-    cursor: grab;
+    cursor: move !important;
     background: #fffdf8;
     border: 1px solid #e4daca;
     border-radius: 999px;
@@ -50,5 +59,10 @@ ESTILO_ORDEN = """
 .sortable-item:hover {
     border-color: #c4532a;
     box-shadow: 0 4px 12px rgba(28, 25, 21, 0.12);
+    transform: translateY(-1px);
+}
+.sortable-item:active,
+.sortable-item.dragging {
+    cursor: grabbing !important;
 }
 """

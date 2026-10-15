@@ -10,11 +10,39 @@ def color_de(pid):
     return PALETA[(pid - 1) % len(PALETA)]
 
 
-def tabla_tareas(tareas):
-    tabla = pd.DataFrame(tareas, columns=["pid", "llegada", "ejecucion", "prioridad"])
+def cierre_de(tramos):
+    fines = {}
+    for tramo in tramos:
+        if tramo["pid"] == 0:
+            continue
+        fines[tramo["pid"]] = max(fines.get(tramo["pid"], 0), tramo["fin"])
+    return fines
+
+
+def tabla_tareas(tareas, tramos=None, reloj=None):
+    fines = cierre_de(tramos or [])
+    filas = []
+    for tarea in tareas:
+        fin = fines.get(tarea["pid"])
+        espera = None if fin is None else fin - tarea["llegada"] - tarea["ejecucion"]
+        termino = ""
+        if fin is not None and reloj is not None:
+            termino = "SI" if reloj >= fin else "NO"
+        filas.append(
+            {
+                "PID": tarea["pid"],
+                "T.ll": tarea["llegada"],
+                "T.exe": tarea["ejecucion"],
+                "Prioridad": tarea["prioridad"],
+                "FIN": termino,
+                "T.Fin": "" if fin is None else fin,
+                "T.Esp": "" if espera is None else espera,
+            }
+        )
+    tabla = pd.DataFrame(filas, columns=["PID", "T.ll", "T.exe", "Prioridad", "FIN", "T.Fin", "T.Esp"])
 
     def pintar(columna):
-        if columna.name != "pid":
+        if columna.name != "PID":
             return [""] * len(columna)
         return [
             f"background-color: {color_de(int(valor))}; color: #fffdf8; font-weight: 600"
@@ -89,10 +117,10 @@ def figura_gantt(tramos, procesadores, segundos, reloj):
     fin_eje = max([reloj, *[tramo["fin"] for tramo in tramos]], default=1)
     figura.update_layout(
         barmode="overlay",
-        height=max(180, 78 + 46 * procesadores),
-        margin=dict(l=8, r=8, t=8, b=8),
+        height=max(260, 150 + 52 * procesadores),
+        margin=dict(l=56, r=24, t=28, b=72),
         plot_bgcolor="#fffdf8",
-        paper_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="#fffdf8",
         font=dict(color="#1c1915"),
         xaxis=dict(
             title=f"Tiempo (1 u = {segundos:g} s)",

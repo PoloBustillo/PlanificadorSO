@@ -17,15 +17,37 @@ def entero(valor, campo):
     return numero
 
 
+ALIAS = {
+    "pid": "pid",
+    "t.ll": "llegada",
+    "tll": "llegada",
+    "llegada": "llegada",
+    "t.exe": "ejecucion",
+    "texe": "ejecucion",
+    "ejecucion": "ejecucion",
+    "prioridad": "prioridad",
+    "fin": "fin",
+    "t.fin": "t_fin",
+    "tfin": "t_fin",
+    "t.esp": "t_esp",
+    "tesp": "t_esp",
+}
+
+
+def canonica(nombre):
+    texto = str(nombre).strip().lower().replace(" ", "")
+    return ALIAS.get(texto, texto)
+
+
 def leer_csv(contenido):
     try:
         tabla = pd.read_csv(io.BytesIO(contenido))
     except Exception as error:
         raise ValueError("No se pudo leer el CSV") from error
-    tabla.columns = [str(columna).strip().lower() for columna in tabla.columns]
+    tabla.columns = [canonica(columna) for columna in tabla.columns]
     requeridas = ["llegada", "ejecucion", "prioridad"]
     if not set(requeridas).issubset(set(tabla.columns)):
-        raise ValueError("El CSV debe tener las columnas llegada, ejecucion y prioridad")
+        raise ValueError("El CSV debe tener llegada (T.ll), ejecucion (T.exe) y prioridad")
     if tabla.empty:
         raise ValueError("El CSV no trae tareas")
     tareas = []
@@ -37,7 +59,14 @@ def leer_csv(contenido):
             raise ValueError("La llegada no puede ser negativa")
         if ejecucion < 1:
             raise ValueError("La ejecución debe ser de al menos 1")
-        tareas.append({"pid": indice, "llegada": llegada, "ejecucion": ejecucion, "prioridad": prioridad})
+        pid = indice
+        if "pid" in tabla.columns and not pd.isna(fila["pid"]):
+            pid = entero(fila["pid"], "pid")
+            if pid < 1:
+                raise ValueError("El PID debe ser de al menos 1")
+        tareas.append({"pid": pid, "llegada": llegada, "ejecucion": ejecucion, "prioridad": prioridad})
+    if len({tarea["pid"] for tarea in tareas}) != len(tareas):
+        raise ValueError("Hay PID repetidos")
     return tareas
 
 

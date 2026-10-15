@@ -21,7 +21,7 @@ from planificador.sesion import (
 def criterios():
     with st.container(border=True):
         st.subheader("Criterios")
-        st.caption("Sin expropiación. Arrastra los criterios encendidos: el de la izquierda desempata primero. Gana el número menor.")
+        st.caption("Arrastra los criterios encendidos")
         st.pills(
             "Criterios",
             [criterio["nombre"] for criterio in CRITERIOS],
@@ -55,7 +55,7 @@ def criterios():
 
 @st.dialog("Importar tareas")
 def dialogo_importar():
-    st.caption("Columnas: llegada, ejecucion, prioridad. Si el archivo trae pid, se ignora.")
+    st.caption("Se usan PID, T.ll, T.exe y Prioridad. FIN, T.Fin y T.Esp se calculan; si vienen en el archivo, se ignoran.")
     archivo = st.file_uploader("CSV", type=["csv"], key="archivo_csv")
     if archivo is None:
         return
@@ -145,7 +145,18 @@ def formulario_tareas():
     if not st.session_state.tareas:
         st.info("Todavía no hay tareas.")
         return
-    st.dataframe(tabla_tareas(st.session_state.tareas), hide_index=True, width="stretch")
+    tramos = []
+    if st.session_state.orden:
+        tramos = planificar(
+            st.session_state.tareas,
+            st.session_state.orden,
+            int(st.session_state.procesadores),
+        )
+    st.dataframe(
+        tabla_tareas(st.session_state.tareas, tramos, int(st.session_state.reloj)),
+        hide_index=True,
+        width="stretch",
+    )
 
 
 def tareas():
@@ -223,7 +234,10 @@ def reproductor(tramos, fin, procesadores, segundos):
     st.plotly_chart(
         figura_gantt(visibles, procesadores, segundos, int(st.session_state.reloj)),
         width="stretch",
+        theme=None,
+        config={"displayModeBar": False},
     )
+    st.markdown("<div style='height:1.25rem'></div>", unsafe_allow_html=True)
 
 
 def cuerpo_gantt():
@@ -246,12 +260,14 @@ def cuerpo_gantt():
 
 def gantt():
     with st.container(border=True):
-        st.subheader("Diagrama de Gantt")
+        st.subheader("Tiempos de ejecución")
         cuerpo_gantt()
 
 
 def main():
-    st.set_page_config(page_title="Planificador de procesos", layout="wide")
+    st.set_page_config(page_title="Planificador de procesos", layout="wide", page_icon=	":robot:", menu_items={
+        'About': "# SISTEMAS OPERATIVOS. Planificador de procesos."
+    })
     iniciar()
     barra()
     criterios()

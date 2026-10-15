@@ -16,7 +16,7 @@ streamlit run app.py
 
 ## Barra
 
-**Archivo** está arriba: Nuevo, Cargar ejemplo, Importar, Exportar y Descargar plantilla. Importar pide un CSV con `llegada`, `ejecucion` y `prioridad`. El PID del archivo se ignora: la aplicación numera desde 1. La vista previa no reemplaza la lista hasta pulsar **Usar estas tareas**.
+**Archivo** está arriba: Nuevo, Cargar ejemplo, Importar, Exportar y Descargar plantilla. Importar usa `PID`, `T.ll` (llegada), `T.exe` (ejecución) y `Prioridad`. `FIN`, `T.Fin` y `T.Esp` no entran al orden: se calculan. Si el archivo no trae PID, la aplicación numera desde 1. La vista previa no reemplaza la lista hasta pulsar **Usar estas tareas**.
 
 **Configuración** está al lado: procesadores, de 1 a 8, y cuántos segundos vale cada unidad de tiempo. Eso solo traduce el eje y el cursor; no cambia el orden de las tareas.
 
@@ -28,6 +28,4 @@ Encima del diagrama: Reiniciar, Retroceder, Play, Pausa, Avanzar e Ir al final. 
 
 ## Ejemplo
 
-P1 a P4 llegan en 0, 1, 2 y 3, con ráfagas 5, 3, 8 y 6, y prioridades 4, 3, 1 y 2. Con un procesador y el orden Llegada, Ejecución, Prioridad, PID, la CPU queda: P1 de 0 a 5, P2 de 5 a 8, P3 de 8 a 16 y P4 de 16 a 22.
-
-Con dos procesadores y ese mismo orden, P2 llega en 1, así que no entra junto con P1. CPU 1 corre P1 de 0 a 5 y P4 de 5 a 11. CPU 2 espera hasta 1, corre P2 de 1 a 4 y P3 de 4 a 12.
+El ejemplo son 12 procesos. Llegan en 0, 0, 0, 2, 3, 5, 6, 7, 3, 2, 1 y 1; sus ráfagas son 1, 1, 2, 3, 3, 3, 2, 2, 1, 3, 2 y 1; sus prioridades son 4, 4, 3, 2, 0, 1, 4, 3, 2, 1, 4 y 3. Con un procesador y el orden Llegada, Ejecución, Prioridad, PID, la tabla completa `FIN`, `T.Fin` y `T.Esp` al terminar la corrida.
