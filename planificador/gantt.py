@@ -2,6 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from planificador.constantes import COLOR_INACTIVO, PALETA
+from planificador.csv_tareas import COLUMNAS, filas_tareas
 
 
 def color_de(pid):
@@ -10,36 +11,8 @@ def color_de(pid):
     return PALETA[(pid - 1) % len(PALETA)]
 
 
-def cierre_de(tramos):
-    fines = {}
-    for tramo in tramos:
-        if tramo["pid"] == 0:
-            continue
-        fines[tramo["pid"]] = max(fines.get(tramo["pid"], 0), tramo["fin"])
-    return fines
-
-
 def tabla_tareas(tareas, tramos=None, reloj=None):
-    fines = cierre_de(tramos or [])
-    filas = []
-    for tarea in tareas:
-        fin = fines.get(tarea["pid"])
-        espera = None if fin is None else fin - tarea["llegada"] - tarea["ejecucion"]
-        termino = ""
-        if fin is not None and reloj is not None:
-            termino = "SI" if reloj >= fin else "NO"
-        filas.append(
-            {
-                "PID": tarea["pid"],
-                "T.ll": tarea["llegada"],
-                "T.exe": tarea["ejecucion"],
-                "Prioridad": tarea["prioridad"],
-                "FIN": termino,
-                "T.Fin": "" if fin is None else fin,
-                "T.Esp": "" if espera is None else espera,
-            }
-        )
-    tabla = pd.DataFrame(filas, columns=["PID", "T.ll", "T.exe", "Prioridad", "FIN", "T.Fin", "T.Esp"])
+    tabla = pd.DataFrame(filas_tareas(tareas, tramos, reloj), columns=COLUMNAS)
 
     def pintar(columna):
         if columna.name != "PID":

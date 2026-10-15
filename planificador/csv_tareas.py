@@ -70,13 +70,39 @@ def leer_csv(contenido):
     return tareas
 
 
-def tareas_a_csv(tareas):
-    return pd.DataFrame(tareas, columns=["pid", "llegada", "ejecucion", "prioridad"]).to_csv(index=False)
+COLUMNAS = ["PID", "T.ll", "T.exe", "Prioridad", "FIN", "T.Fin", "T.Esp"]
+
+
+def filas_tareas(tareas, tramos=None, reloj=None):
+    fines = {}
+    for tramo in tramos or []:
+        if tramo["pid"] == 0:
+            continue
+        fines[tramo["pid"]] = max(fines.get(tramo["pid"], 0), tramo["fin"])
+    filas = []
+    for tarea in tareas:
+        fin = fines.get(tarea["pid"])
+        espera = None if fin is None else fin - tarea["llegada"] - tarea["ejecucion"]
+        termino = ""
+        if fin is not None and reloj is not None:
+            termino = "SI" if reloj >= fin else "NO"
+        filas.append(
+            {
+                "PID": tarea["pid"],
+                "T.ll": tarea["llegada"],
+                "T.exe": tarea["ejecucion"],
+                "Prioridad": tarea["prioridad"],
+                "FIN": termino,
+                "T.Fin": "" if fin is None else fin,
+                "T.Esp": "" if espera is None else espera,
+            }
+        )
+    return filas
+
+
+def tareas_a_csv(tareas, tramos=None, reloj=None):
+    return pd.DataFrame(filas_tareas(tareas, tramos, reloj), columns=COLUMNAS).to_csv(index=False)
 
 
 def plantilla_csv():
-    filas = [
-        {"llegada": tarea["llegada"], "ejecucion": tarea["ejecucion"], "prioridad": tarea["prioridad"]}
-        for tarea in EJEMPLO
-    ]
-    return pd.DataFrame(filas).to_csv(index=False)
+    return tareas_a_csv(EJEMPLO)

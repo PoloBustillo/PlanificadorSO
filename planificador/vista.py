@@ -84,9 +84,16 @@ def barra():
             if st.button("Importar", width="stretch"):
                 dialogo_importar()
             if st.session_state.tareas:
+                tramos = []
+                if st.session_state.orden:
+                    tramos = planificar(
+                        st.session_state.tareas,
+                        st.session_state.orden,
+                        int(st.session_state.procesadores),
+                    )
                 st.download_button(
                     "Exportar",
-                    tareas_a_csv(st.session_state.tareas),
+                    tareas_a_csv(st.session_state.tareas, tramos, int(st.session_state.reloj)),
                     file_name="tareas.csv",
                     mime="text/csv",
                     width="stretch",
