@@ -3,10 +3,10 @@ import time
 import streamlit as st
 from streamlit_sortables import sort_items
 
-from planificador.constantes import ALGORITMOS, CRITERIOS, ESTILO_ORDEN, ID_A_NOMBRE, NOMBRE_A_ID, VELOCIDAD
+from planificador.constantes import CRITERIOS, ESTILO_ORDEN, ID_A_NOMBRE, NOMBRE_A_ID, VELOCIDAD
 from planificador.csv_tareas import entero, leer_csv, plantilla_csv, tareas_a_csv
 from planificador.gantt import figura_gantt, linea_estado, recortar, tabla_tareas
-from planificador.motor import simular
+from planificador.motor import planificar
 from planificador.sesion import (
     cargar_ejemplo,
     iniciar,
@@ -18,73 +18,39 @@ from planificador.sesion import (
 )
 
 
-def texto_algoritmo():
-    algoritmo = st.session_state.algoritmo
-    if algoritmo == "FCFS":
-        return "Sin expropiación. Entra el que llegó primero. Si empatan, gana el PID menor."
-    if algoritmo == "SJF":
-        return "Sin expropiación. Entra el de menor ejecución. Desempata llegada y luego PID."
-    if algoritmo == "SRTF":
-        return "Con expropiación. Corre el que menos tiempo le queda."
-    if algoritmo == "Round Robin":
-        return "Cada proceso usa la CPU un quantum y, si le falta, vuelve al final de la cola."
-    if algoritmo == "Prioridad" and st.session_state.expropiar:
-        return "Con expropiación. Si llega uno con mejor prioridad, ocupa la CPU. Gana el número menor."
-    if algoritmo == "Prioridad":
-        return "Sin expropiación. Gana la prioridad menor. Desempata llegada y luego PID."
-    return "Sin expropiación. Arrastra los criterios encendidos: el de la izquierda desempata primero."
-
-
 def criterios():
     with st.container(border=True):
-        st.subheader("Algoritmo")
-        st.segmented_control(
-            "Algoritmo",
-            ALGORITMOS,
-            key="algoritmo",
+        st.subheader("Criterios")
+        st.caption("Sin expropiación. Arrastra los criterios encendidos: el de la izquierda desempata primero. Gana el número menor.")
+        st.pills(
+            "Criterios",
+            [criterio["nombre"] for criterio in CRITERIOS],
+            selection_mode="multi",
+            key="activos",
+            on_change=sincronizar_activos,
             label_visibility="collapsed",
-            width="stretch",
-            required=True,
         )
-        st.caption(texto_algoritmo())
-        elegido = st.session_state.algoritmo
-        if elegido == "Round Robin":
-            quantum, _resto = st.columns([1, 3])
-            quantum.number_input("Quantum", min_value=1, step=1, key="quantum")
-        elif elegido == "Prioridad":
-            st.toggle("Expropiar", key="expropiar")
-        elif elegido == "Por criterios":
-            st.divider()
-            st.markdown("**Criterios**")
-            st.pills(
-                "Criterios",
-                [criterio["nombre"] for criterio in CRITERIOS],
-                selection_mode="multi",
-                key="activos",
-                on_change=sincronizar_activos,
-                label_visibility="collapsed",
-            )
-            orden = list(st.session_state.orden)
-            if not orden:
-                st.caption("Enciende al menos un criterio.")
-                return
-            lista, resumen = st.columns([1.4, 2], vertical_alignment="center")
-            with lista:
-                if len(orden) == 1:
-                    st.write(ID_A_NOMBRE[orden[0]])
-                else:
-                    nombres = [ID_A_NOMBRE[criterio] for criterio in orden]
-                    resultado = sort_items(
-                        nombres,
-                        direction="horizontal",
-                        key="orden-" + "-".join(sorted(orden)),
-                        custom_style=ESTILO_ORDEN,
-                    )
-                    if isinstance(resultado, list) and set(resultado) == set(nombres):
-                        orden = [NOMBRE_A_ID[nombre] for nombre in resultado]
-                        st.session_state.orden = orden
-            with resumen:
-                st.markdown("**" + " → ".join(ID_A_NOMBRE[criterio] for criterio in orden) + "**")
+        orden = list(st.session_state.orden)
+        if not orden:
+            st.caption("Enciende al menos un criterio.")
+            return
+        lista, resumen = st.columns([1.4, 2], vertical_alignment="center")
+        with lista:
+            if len(orden) == 1:
+                st.write(ID_A_NOMBRE[orden[0]])
+            else:
+                nombres = [ID_A_NOMBRE[criterio] for criterio in orden]
+                resultado = sort_items(
+                    nombres,
+                    direction="horizontal",
+                    key="orden-" + "-".join(sorted(orden)),
+                    custom_style=ESTILO_ORDEN,
+                )
+                if isinstance(resultado, list) and set(resultado) == set(nombres):
+                    orden = [NOMBRE_A_ID[nombre] for nombre in resultado]
+                    st.session_state.orden = orden
+        with resumen:
+            st.markdown("**" + " → ".join(ID_A_NOMBRE[criterio] for criterio in orden) + "**")
 
 
 @st.dialog("Importar tareas")
@@ -109,7 +75,7 @@ def barra():
     titulo.markdown("### Planificador")
     segundos = float(st.session_state.segundos)
     estado.caption(
-        f"{st.session_state.algoritmo} · {len(st.session_state.tareas)} tareas · {int(st.session_state.procesadores)} CPU · 1 u = {segundos:g} s"
+        f"{len(st.session_state.tareas)} tareas · {int(st.session_state.procesadores)} CPU · 1 u = {segundos:g} s"
     )
     with archivo:
         with st.popover("Archivo", width="stretch"):
@@ -264,19 +230,12 @@ def cuerpo_gantt():
     if not st.session_state.tareas:
         st.info("Agrega al menos una tarea para ver el diagrama.")
         return
-    if st.session_state.algoritmo == "Por criterios" and not st.session_state.orden:
+    if not st.session_state.orden:
         st.info("Enciende al menos un criterio para ordenar la cola.")
         return
     procesadores = int(st.session_state.procesadores)
     segundos = float(st.session_state.segundos)
-    tramos = simular(
-        st.session_state.tareas,
-        st.session_state.algoritmo,
-        st.session_state.orden,
-        procesadores,
-        int(st.session_state.quantum),
-        bool(st.session_state.expropiar),
-    )
+    tramos = planificar(st.session_state.tareas, st.session_state.orden, procesadores)
     if not tramos:
         st.info("No hay nada que dibujar con esta configuración.")
         return

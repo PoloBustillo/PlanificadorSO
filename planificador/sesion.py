@@ -16,9 +16,6 @@ def iniciar():
             ]
         else:
             st.session_state.activos = [criterio["nombre"] for criterio in CRITERIOS]
-    st.session_state.setdefault("algoritmo", "Por criterios")
-    st.session_state.setdefault("quantum", 2)
-    st.session_state.setdefault("expropiar", False)
     st.session_state.setdefault("procesadores", 1)
     st.session_state.setdefault("segundos", 1.0)
     st.session_state.setdefault("reloj", 0)
@@ -33,18 +30,9 @@ def reiniciar_reloj():
 
 
 def vigilar_reloj():
-    algoritmo = st.session_state.algoritmo
-    if algoritmo == "Round Robin":
-        extra = ("rr", int(st.session_state.quantum))
-    elif algoritmo == "Prioridad":
-        extra = ("prioridad", bool(st.session_state.expropiar))
-    elif algoritmo == "Por criterios":
-        extra = ("criterios", tuple(st.session_state.orden))
-    else:
-        extra = (algoritmo,)
     firma = (
         tuple((tarea["pid"], tarea["llegada"], tarea["ejecucion"], tarea["prioridad"]) for tarea in st.session_state.tareas),
-        extra,
+        tuple(st.session_state.orden),
         int(st.session_state.procesadores),
     )
     if st.session_state.get("firma_corrida") != firma:

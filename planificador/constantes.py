@@ -4,7 +4,6 @@ CRITERIOS = [
     {"id": "prioridad", "nombre": "Prioridad"},
     {"id": "pid", "nombre": "PID"},
 ]
-ALGORITMOS = ["FCFS", "SJF", "SRTF", "Round Robin", "Prioridad", "Por criterios"]
 NOMBRE_A_ID = {criterio["nombre"]: criterio["id"] for criterio in CRITERIOS}
 ID_A_NOMBRE = {criterio["id"]: criterio["nombre"] for criterio in CRITERIOS}
 VELOCIDAD = {"Lento": 1.0, "Normal": 0.45, "Rápido": 0.2}
