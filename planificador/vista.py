@@ -107,10 +107,11 @@ def barra():
             )
     with configuracion:
         with st.popover("Configuración", width="stretch"):
-            st.number_input("Procesadores", min_value=1, max_value=8, step=1, key="procesadores")
+            st.number_input(icon="🖥", label="Procesadores", min_value=1, max_value=8, step=1, key="procesadores")
             st.number_input(
                 "Segundos por unidad",
                 min_value=0.01,
+                icon="⏱",
                 step=0.1,
                 format="%.2f",
                 key="segundos",
@@ -257,6 +258,7 @@ def cuerpo_gantt():
     procesadores = int(st.session_state.procesadores)
     segundos = float(st.session_state.segundos)
     tramos = planificar(st.session_state.tareas, st.session_state.orden, procesadores)
+    print(tramos)
     if not tramos:
         st.info("No hay nada que dibujar con esta configuración.")
         return

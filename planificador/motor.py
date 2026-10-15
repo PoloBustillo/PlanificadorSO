@@ -26,6 +26,7 @@ def planificar(tareas, orden, procesadores=1):
             libre[cpu] = siguiente
             continue
         elegido = min(listos, key=lambda tarea: clave(tarea, orden))
+        print(f"CPU {cpu + 1} elige tarea {elegido['pid']} en instante {instante}")
         fin = instante + elegido["ejecucion"]
         tramos.append(
             {
