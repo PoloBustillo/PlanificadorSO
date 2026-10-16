@@ -23,7 +23,24 @@ EJEMPLO = [
     {"pid": 12, "llegada": 1, "ejecucion": 1, "prioridad": 3},
 ]
 
-PALETA = ["#1f6f5b", "#c4532a", "#245b86", "#8a5a12", "#6b3f69", "#3d6b4f", "#8f3d3d"]
+PALETA = [
+    "#1b7a64",
+    "#d4652f",
+    "#2a6fad",
+    "#8a5a12",
+    "#7a4e86",
+    "#0e7490",
+    "#a33b3b",
+    "#4d7c0f",
+    "#1e3a8a",
+    "#b45309",
+    "#6d28d9",
+    "#be185d",
+    "#0f766e",
+    "#9a3412",
+    "#0369a1",
+    "#3f6212",
+]
 COLOR_INACTIVO = "#c8c2b6"
 
 ESTILO_ORDEN = """

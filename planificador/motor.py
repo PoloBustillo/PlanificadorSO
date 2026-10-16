@@ -26,7 +26,6 @@ def planificar(tareas, orden, procesadores=1):
             libre[cpu] = siguiente
             continue
         elegido = min(listos, key=lambda tarea: clave(tarea, orden))
-        print(f"CPU {cpu + 1} elige tarea {elegido['pid']} en instante {instante}")
         fin = instante + elegido["ejecucion"]
         tramos.append(
             {
@@ -40,3 +39,22 @@ def planificar(tareas, orden, procesadores=1):
         libre[cpu] = fin
         pendientes.remove(elegido)
     return tramos
+
+
+def estado_en(tareas, tramos, orden, reloj):
+    por_pid = {tramo["pid"]: tramo for tramo in tramos if tramo["pid"]}
+    espera = []
+    listos = []
+    for tarea in tareas:
+        if tarea["llegada"] > reloj:
+            continue
+        tramo = por_pid.get(tarea["pid"])
+        if tramo is None or tramo["fin"] <= reloj:
+            continue
+        if tramo["inicio"] <= reloj:
+            espera.append((tarea, tramo))
+        else:
+            listos.append(tarea)
+    espera.sort(key=lambda par: par[1]["cpu"])
+    listos.sort(key=lambda tarea: clave(tarea, orden))
+    return espera, listos

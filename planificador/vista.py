@@ -5,8 +5,15 @@ from streamlit_sortables import sort_items
 
 from planificador.constantes import CRITERIOS, ESTILO_ORDEN, ID_A_NOMBRE, NOMBRE_A_ID, VELOCIDAD
 from planificador.csv_tareas import entero, leer_csv, plantilla_csv, tareas_a_csv
-from planificador.gantt import figura_gantt, linea_estado, recortar, tabla_tareas
-from planificador.motor import planificar
+from planificador.gantt import (
+    fichas_espera,
+    fichas_listos,
+    figura_gantt,
+    panel_cola,
+    recortar,
+    tabla_tareas,
+)
+from planificador.motor import estado_en, planificar
 from planificador.sesion import (
     cargar_ejemplo,
     iniciar,
@@ -186,7 +193,32 @@ def avanzar_reloj(fin):
         st.rerun()
 
 
-def reproductor(tramos, fin, procesadores, segundos):
+def colas(tramos, reloj, tareas, orden):
+    espera, listos = estado_en(tareas, tramos, orden, reloj)
+    columna_espera, columna_listos = st.columns(2, gap="medium")
+    columna_espera.markdown(
+        panel_cola(
+            "Cola de espera",
+            "Ya entraron a una CPU y todavía no terminan.",
+            "#245b86",
+            fichas_espera(espera, reloj),
+            "Nadie está en ejecución.",
+        ),
+        unsafe_allow_html=True,
+    )
+    columna_listos.markdown(
+        panel_cola(
+            "Cola de listos",
+            "Ya llegaron y todavía no entran a una CPU.",
+            "#c4532a",
+            fichas_listos(listos),
+            "Nadie espera para entrar.",
+        ),
+        unsafe_allow_html=True,
+    )
+
+
+def reproductor(tramos, fin, procesadores, segundos, tareas, orden):
     avanzar_reloj(fin)
     reloj = int(st.session_state.reloj)
     with st.container(horizontal=True, vertical_alignment="center", gap="xsmall"):
@@ -237,15 +269,17 @@ def reproductor(tramos, fin, procesadores, segundos):
             st.session_state.reproduciendo = False
             st.rerun()
         st.selectbox("Velocidad", list(VELOCIDAD), key="velocidad", label_visibility="collapsed")
-    st.caption(linea_estado(tramos, int(st.session_state.reloj), procesadores, segundos))
-    visibles = recortar(tramos, int(st.session_state.reloj))
+    reloj = int(st.session_state.reloj)
+    st.caption(f"t = {reloj} · {reloj * segundos:g} s")
+    colas(tramos, reloj, tareas, orden)
+    visibles = recortar(tramos, reloj)
     st.plotly_chart(
         figura_gantt(visibles, procesadores, segundos, int(st.session_state.reloj)),
         width="stretch",
         theme=None,
         config={"displayModeBar": False},
     )
-    st.markdown("<div style='height:1.25rem'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:2.75rem'></div>", unsafe_allow_html=True)
 
 
 def cuerpo_gantt():
@@ -258,13 +292,19 @@ def cuerpo_gantt():
     procesadores = int(st.session_state.procesadores)
     segundos = float(st.session_state.segundos)
     tramos = planificar(st.session_state.tareas, st.session_state.orden, procesadores)
-    print(tramos)
     if not tramos:
         st.info("No hay nada que dibujar con esta configuración.")
         return
     fin = max(tramo["fin"] for tramo in tramos)
     intervalo = 0.2 if st.session_state.reproduciendo and st.session_state.reloj < fin else None
-    st.fragment(reproductor, run_every=intervalo)(tramos, fin, procesadores, segundos)
+    st.fragment(reproductor, run_every=intervalo)(
+        tramos,
+        fin,
+        procesadores,
+        segundos,
+        st.session_state.tareas,
+        list(st.session_state.orden),
+    )
 
 
 def gantt():
