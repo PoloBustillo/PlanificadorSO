@@ -1,6 +1,6 @@
 # Planificador de procesos
 
-Pantalla en Streamlit para ordenar tareas en una o varias CPU que comparten la cola. El orden lo deciden llegada, ejecución, prioridad y PID: se encienden en un grupo y se arrastran. El de la izquierda desempata primero. Gana el número menor. No hay expropiación.
+Pantalla en Streamlit para ordenar tareas en una o varias CPU que comparten la cola. El orden lo deciden llegada, ejecución, prioridad y PID: se encienden en un grupo y se arrastran. El de la izquierda desempata primero. En ejecución y PID gana el número menor; en prioridad gana el mayor. No hay expropiación.
 
 El diagrama no se muestra completo de una vez. Los controles avanzan el reloj de una unidad en una.
 

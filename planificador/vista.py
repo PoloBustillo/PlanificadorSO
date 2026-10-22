@@ -118,10 +118,12 @@ def barra():
             st.number_input(
                 "Segundos por unidad",
                 min_value=0.01,
-                icon="⏱",
-                step=0.1,
+                value=1.0,
+                step=0.01,
                 format="%.2f",
+                icon="⏱",
                 key="segundos",
+                persist_state="session",
             )
 
 
