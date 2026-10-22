@@ -176,23 +176,21 @@ def fichas_listos(listos):
             _chip(
                 tarea["pid"],
                 "Sigue" if indice == 0 else "",
-                f"{puesto}exe {tarea['ejecucion']} · pri {tarea['prioridad']}",
+                f"{puesto}restan {tarea.get('restante', tarea['ejecucion'])} · pri {tarea['prioridad']}",
                 destacado=indice == 0,
             )
         )
     return fichas
 
 
-def fichas_espera(espera, reloj):
+def fichas_espera(espera):
     fichas = []
-    for tarea, tramo in espera:
-        falta = tramo["fin"] - reloj
+    for tarea in espera:
         fichas.append(
             _chip(
                 tarea["pid"],
-                f"CPU {tramo['cpu']}",
-                f"acaba en {tramo['fin']} · falta {falta}",
-                destacado=True,
+                "Espera",
+                f"restan {tarea.get('restante', tarea['ejecucion'])} · pri {tarea['prioridad']}",
                 acento="#245b86",
             )
         )

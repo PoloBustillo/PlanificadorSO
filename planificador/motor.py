@@ -3,7 +3,7 @@ def clave(tarea, orden, instante):
     valores = {
         # Una tarea que ya llegó tiene 0 pendiente en este criterio.
         "llegada": max(tarea["llegada"] - instante, 0),
-        "ejecucion": tarea["ejecucion"],
+        "ejecucion": tarea.get("restante", tarea["ejecucion"]),
         # La prioridad más alta debe producir la clave más pequeña.
         "prioridad": -tarea["prioridad"],
         "pid": tarea["pid"],
@@ -12,101 +12,93 @@ def clave(tarea, orden, instante):
 
 
 def planificar(tareas, orden, procesadores=1):
-    # Si no hay tareas, criterios u ordenadores válidos, no hay nada que planificar.
     if not tareas or not orden or procesadores < 1:
         return []
 
-    # Copiamos las tareas para poder quitar las que ya fueron planificadas.
-    pendientes = []
-    for tarea in tareas:
-        copia_tarea = dict(tarea)
-        pendientes.append(copia_tarea)
-
-    # Indica en qué instante queda libre cada procesador.
-    libre = [0] * procesadores
-
-    # Aquí guardaremos todos los tramos de ejecución.
+    procesos = [dict(tarea, restante=tarea["ejecucion"]) for tarea in tareas]
+    incorporados = set()
+    listos = []
+    espera = []
     tramos = []
+    instante = 0
+    ronda = 1
 
-    # Repetimos hasta planificar todas las tareas.
-    while pendientes:
-        # Buscamos el procesador que queda libre primero.
-        cpu = 0
-        for indice in range(1, procesadores):
-            procesador_actual = (libre[indice], indice)
-            procesador_elegido = (libre[cpu], cpu)
-
-            # En caso de empate, se conserva el procesador con menor índice.
-            if procesador_actual < procesador_elegido:
-                cpu = indice
-
-        instante = libre[cpu]
-
-        # Buscamos las tareas que ya llegaron y pueden ejecutarse.
-        listos = []
-        for tarea in pendientes:
-            if tarea["llegada"] <= instante:
+    while any(tarea["restante"] > 0 for tarea in procesos):
+        for tarea in procesos:
+            if tarea["pid"] not in incorporados and tarea["llegada"] <= instante:
                 listos.append(tarea)
+                incorporados.add(tarea["pid"])
 
-        if not listos:
-            # Si no hay tareas listas, el procesador permanece inactivo
-            # hasta que llegue la siguiente tarea.
-            siguiente = pendientes[0]["llegada"]
-            for tarea in pendientes:
-                if tarea["llegada"] < siguiente:
-                    siguiente = tarea["llegada"]
+        for cpu in range(procesadores):
+            if not listos:
+                if any(tarea["restante"] > 0 for tarea in procesos):
+                    tramos.append(
+                        {
+                            "cpu": cpu + 1,
+                            "pid": 0,
+                            "nombre": "Inactivo",
+                            "inicio": instante,
+                            "fin": instante + 1,
+                        }
+                    )
+                continue
 
+            elegido = min(listos, key=lambda tarea: clave(tarea, orden, instante))
             tramos.append(
-                {"cpu": cpu + 1, "pid": 0, "nombre": "Inactivo", "inicio": instante, "fin": siguiente}
+                {
+                    "cpu": cpu + 1,
+                    "pid": elegido["pid"],
+                    "nombre": f"P{elegido['pid']}",
+                    "inicio": instante,
+                    "fin": instante + 1,
+                    "ronda": ronda,
+                }
             )
-            libre[cpu] = siguiente
-            continue
+            elegido["restante"] -= 1
+            listos.remove(elegido)
+            if elegido["restante"] > 0:
+                espera.append(elegido)
 
-        # Elegimos la tarea según el orden de criterios recibido.
-        elegido = listos[0]
-        for tarea in listos[1:]:
-            clave_tarea = clave(tarea, orden, instante)
-            clave_elegida = clave(elegido, orden, instante)
+        # La espera vuelve a listos únicamente cuando la cola de listos fue
+        # consumida por completo, y siempre para la siguiente unidad.
+        if not listos and espera:
+            listos = espera.copy()
+            espera.clear()
+            ronda += 1
 
-            if clave_tarea < clave_elegida:
-                elegido = tarea
-
-        fin = instante + elegido["ejecucion"]
-
-        # Guardamos cuándo y dónde se ejecutó la tarea.
-        tramos.append(
-            {
-                "cpu": cpu + 1,
-                "pid": elegido["pid"],
-                "nombre": f"P{elegido['pid']}",
-                "inicio": instante,
-                "fin": fin,
-            }
-        )
-
-        # El procesador queda libre cuando termina la tarea.
-        libre[cpu] = fin
-
-        # La tarea ya fue planificada, así que la quitamos de pendientes.
-        pendientes.remove(elegido)
-
+        instante += 1
     return tramos
 
 
-def estado_en(tareas, tramos, orden, reloj):
-    por_pid = {tramo["pid"]: tramo for tramo in tramos if tramo["pid"]}
-    espera = []
+def estado_en(tareas, orden, reloj, procesadores=1):
+    procesos = [dict(tarea, restante=tarea["ejecucion"]) for tarea in tareas]
+    incorporados = set()
     listos = []
-    for tarea in tareas:
-        if tarea["llegada"] > reloj:
-            continue
-        tramo = por_pid.get(tarea["pid"])
-        if tramo is None or tramo["fin"] <= reloj:
-            continue
-        if tramo["inicio"] <= reloj:
-            espera.append((tarea, tramo))
-        else:
+    espera = []
+
+    for instante in range(reloj):
+        for tarea in procesos:
+            if tarea["pid"] not in incorporados and tarea["llegada"] <= instante:
+                listos.append(tarea)
+                incorporados.add(tarea["pid"])
+
+        for _ in range(procesadores):
+            if not listos:
+                break
+            elegido = min(listos, key=lambda tarea: clave(tarea, orden, instante))
+            listos.remove(elegido)
+            elegido["restante"] -= 1
+            if elegido["restante"] > 0:
+                espera.append(elegido)
+
+        if not listos and espera:
+            listos = espera.copy()
+            espera.clear()
+
+    for tarea in procesos:
+        if tarea["pid"] not in incorporados and tarea["llegada"] <= reloj:
             listos.append(tarea)
-    espera.sort(key=lambda par: par[1]["cpu"])
+            incorporados.add(tarea["pid"])
+
     listos.sort(key=lambda tarea: clave(tarea, orden, reloj))
     return espera, listos

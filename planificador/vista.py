@@ -196,22 +196,27 @@ def avanzar_reloj(fin):
 
 
 def colas(tramos, reloj, tareas, orden):
-    espera, listos = estado_en(tareas, tramos, orden, reloj)
+    espera, listos = estado_en(
+        tareas,
+        orden,
+        reloj,
+        int(st.session_state.procesadores),
+    )
     columna_espera, columna_listos = st.columns(2, gap="medium")
     columna_espera.markdown(
         panel_cola(
             "Cola de espera",
-            "Ya entraron a una CPU y todavía no terminan.",
+            "Ya ejecutaron una unidad y esperan a que se vacíe la cola de listos.",
             "#245b86",
-            fichas_espera(espera, reloj),
-            "Nadie está en ejecución.",
+            fichas_espera(espera),
+            "Nadie espera la siguiente ronda.",
         ),
         unsafe_allow_html=True,
     )
     columna_listos.markdown(
         panel_cola(
             "Cola de listos",
-            "Ya llegaron y todavía no entran a una CPU.",
+            "Los procesadores solo toman tareas de esta cola.",
             "#c4532a",
             fichas_listos(listos),
             "Nadie espera para entrar.",
