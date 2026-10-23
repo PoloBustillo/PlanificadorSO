@@ -152,7 +152,7 @@ def _vacio(texto):
     )
 
 
-def panel_cola(titulo, ayuda, acento, fichas, vacio):
+def panel_cola(titulo, acento, fichas, vacio):
     cuerpo = "".join(fichas) if fichas else _vacio(vacio)
     return (
         "<section style='background:#fffdf8;border:1px solid #e7dccb;border-top:4px solid "
@@ -162,22 +162,22 @@ def panel_cola(titulo, ayuda, acento, fichas, vacio):
         "<span style='background:#1c1915;color:#fffdf8;border-radius:999px;min-width:1.6rem;"
         f"text-align:center;padding:.08rem .5rem;font-size:.75rem;font-weight:700'>{len(fichas)}</span>"
         "</div>"
-        f"<div style='color:#6f675e;font-size:.78rem;margin:.2rem 0 .7rem'>{escape(ayuda)}</div>"
-        f"<div style='display:flex;flex-wrap:wrap;gap:.45rem'>{cuerpo}</div>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.7rem'>{cuerpo}</div>"
         "</section>"
     )
 
 
-def fichas_listos(listos):
+def fichas_listos(listos, procesadores=1):
     fichas = []
     for indice, tarea in enumerate(listos):
         puesto = f"{indice + 1}º · " if indice else ""
+        sigue = indice < procesadores
         fichas.append(
             _chip(
                 tarea["pid"],
-                "Sigue" if indice == 0 else "",
+                "Sigue" if sigue else "",
                 f"{puesto}restan {tarea.get('restante', tarea['ejecucion'])} · pri {tarea['prioridad']}",
-                destacado=indice == 0,
+                destacado=sigue,
             )
         )
     return fichas

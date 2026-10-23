@@ -118,7 +118,6 @@ def barra():
             st.number_input(
                 "Segundos por unidad",
                 min_value=0.01,
-                value=1.0,
                 step=0.01,
                 format="%.2f",
                 icon="⏱",
@@ -196,17 +195,17 @@ def avanzar_reloj(fin):
 
 
 def colas(tramos, reloj, tareas, orden):
+    procesadores = int(st.session_state.procesadores)
     espera, listos = estado_en(
         tareas,
         orden,
         reloj,
-        int(st.session_state.procesadores),
+        procesadores,
     )
     columna_espera, columna_listos = st.columns(2, gap="medium")
     columna_espera.markdown(
         panel_cola(
             "Cola de espera",
-            "Ya ejecutaron una unidad y esperan a que se vacíe la cola de listos.",
             "#245b86",
             fichas_espera(espera),
             "Nadie espera la siguiente ronda.",
@@ -216,9 +215,8 @@ def colas(tramos, reloj, tareas, orden):
     columna_listos.markdown(
         panel_cola(
             "Cola de listos",
-            "Los procesadores solo toman tareas de esta cola.",
             "#c4532a",
-            fichas_listos(listos),
+            fichas_listos(listos, procesadores),
             "Nadie espera para entrar.",
         ),
         unsafe_allow_html=True,
